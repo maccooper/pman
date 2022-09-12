@@ -1,0 +1,18 @@
+Program pman (Process Manager) is able to run basic shell commands: ls, cd, exit. As well as create a process (and run it in background), present a list of process, terminate/stop/start a process and.
+
+How to use ssi:
+	Step 1:	compile test files that you want to use
+	Step 2: execute "make" in terminal to compile ssi 
+	Step 3: execute "./ssi" in terminal to run ssi
+	Step 4: input supported commands in ssi
+
+Supported Commands of ssi:
+	1. bg <cmd>:		Start a program <cmd> inm the background
+	2. bglist:		Display a list of all the programs currently executing in the background
+	3. bgkill <pid>:	Terminate the process <pid>
+	4. bgstop <pid>:	Temporarily stop process <pid>
+	5. bgstart <pid>:	Restart process <pid> which has been previously stopped
+	
+Important notes for bg:
+	If you want to run inf.c using bg, compile inf.c using "gcc inf.c -o inf" or execute "make inf" before you execute "./ssi".
+Compile and run ssi and input "bg ./inf a 1" where "a" and 1 are the parameters required by inf.c Note that you should use ./inf if inf is not in PATH.
