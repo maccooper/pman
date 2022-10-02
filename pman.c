@@ -292,7 +292,6 @@ void dispatch_command(char **args, int length)
 
 int main()
 {
-    /*
     const int max_args = 50;
     char user_input_str[50];
     while (1) {
@@ -315,7 +314,8 @@ int main()
       printf("\n");
     }
     free_list(head);
-  return 0; */
+  return 0;
+    /*
     int i, j;
     char *token = " ";
     char *prompt = "pman:   >";
@@ -344,4 +344,5 @@ int main()
     }
     update_process();
     free_list(head);
+    */
 }
