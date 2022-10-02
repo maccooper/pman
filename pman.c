@@ -17,10 +17,12 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <errno.h>
-#include "csc360_list.h"
 #include <dirent.h>
 #include <sys/mman.h>
+#include <errno.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include "csc360_list.h"
 
 
 #define BUFFER_SIZE 1000
@@ -78,12 +80,12 @@ void bg_entry(char **argv, int arglength)
 	//runs a process in the background while parent continues to read input. Adds pid to linkedlist datastructure
 	pid_t pid;
 	pid = fork();
-	update_process();
 	if (pid == 0) {
 		//in child process
 		if (execvp(argv[1], &argv[1]) < 0) {
 			perror("Error on execvp");
 			exit(-1);
+            return;
 		}
 	} else if (pid > 0) {
 		//parent Process
@@ -98,6 +100,7 @@ void bg_entry(char **argv, int arglength)
 		perror("fork failed");
 		exit(EXIT_FAILURE);
 	}
+    update_process();
 }
 
 
@@ -130,8 +133,10 @@ void bg_start(int pid)
 void bg_kill(int pid)
 {
     //sends TERM signal to target <pid>
-	if (!process_exists(pid)) 
+	if (!process_exists(pid)) {
+        printf("Process not found");
 		return;
+    }
 	Node *target = find_node(pid);
 	if (target && target->run_state == 0) {
 		bg_start(pid);
@@ -194,6 +199,22 @@ void change_dir(char **args)
 
 }
 
+char **string_token(char *s)
+{ 
+    //Input:    a string with spaces
+    //Output: 2d array with substrings from s
+    //Helper function for p_stat
+    char *ptr = strtok(s, " ");
+    char **args = (char **)malloc(BUFFER_SIZE * sizeof(char *));
+    int i = 0;
+    while (ptr != NULL) {
+        args[i] = ptr;
+        ptr = strtok(NULL, " ");
+        i++;
+    }
+    return args;
+}
+
 void pstat_write(char **args_stat, int vol, int nonvol)
 {
     //Input:    Array containing p_stat args to write
@@ -207,42 +228,61 @@ void pstat_write(char **args_stat, int vol, int nonvol)
     printf("nonvoluntary_ctxt_switches:\t%d\n", nonvol);
 }
 
+int isdigit_string(char input[]) {
+    int length = strlen(input);
+    for(int i = 0; i < length; i++) {
+        if(!isdigit(input[i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+int verify_input(char input[]) {
+    if(!input) {
+        printf("job not specified\n");
+        return -1;
+    } else if (!isdigit_string(input)) {
+        printf("please specify an integer for pid\n");
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 void dispatch_command(char **args, int length)
 {
 	//manages function calls based on console command
 	if (!(strcasecmp(args[0], "bglist"))) {
-	    printf("bg list command here\n");
-	//	bg_list();
+		bg_list();
 	}
 	else if (!(strcasecmp(args[0], "bg"))) {
-	    printf("bg entry command\n");
-	//bg_entry(args, length);
+        bg_entry(args, length);
 	}
-	else if (!(strcasecmp(args[0], "bglist"))) {
-		//ls_command(args, length);
+	else if (!(strcasecmp(args[0], "ls"))) {
+		ls_command(args, length);
 	}
 	else if (!(strcasecmp(args[0], "cd"))) {
         printf("change directory command\n");
-        /*
+        
 		if(length > 2){
 			printf("Too many arguments for cd\n");
 		} else {
 			change_dir(args);	
 		}
-        */
+        
 	}
 	else if (!(strcasecmp(args[0], "exit"))) {
 		printf("Exiting the program\n");
 		exit(0);
 	} else if (!(strcasecmp(args[0], "bgstop"))) {
-		//bg_stop(atoi(args[1]));
-        printf("bgstop command\n");
+		bg_stop(atoi(args[1]));
+        //printf("bgstop command\n");
 	} else if (!(strcasecmp(args[0], "bgstart"))) {
-		//bg_start(atoi(args[1]));
-        printf("bgstart command\n");
+		bg_start(atoi(args[1]));
+        //printf("bgstart command\n");
 	} else if (!(strcasecmp(args[0], "bgkill"))) {
-        printf("bgkill command\n");
-		//bg_kill(atoi(args[1]));
+		bg_kill(atoi(args[1]));
+        //printf("bgkill command\n");
 	} else {
 		printf("Command not recognized\n");
 	}
@@ -252,6 +292,7 @@ void dispatch_command(char **args, int length)
 
 int main()
 {
+    /*
     const int max_args = 50;
     char user_input_str[50];
     while (1) {
@@ -271,7 +312,36 @@ int main()
         index++;
       }
       dispatch_command(args, index);
+      printf("\n");
     }
-  return 0;
-}
+    free_list(head);
+  return 0; */
+    int i, j;
+    char *token = " ";
+    char *prompt = "pman:   >";
+    const int max_args = 100;
+    while (1) {
+        i = 0;
+        char *input = NULL;
+        char *iterToken;
+        char *args[max_args];
+        input = readline(prompt);
+        if (!strcmp(input, "")) 
+            continue;
+        iterToken = strtok(input, token);
+        for(j = 0; j < max_args; j++) {
+            if(iterToken)
+                i++;                //Tracks number of arguments
+            args[j] = iterToken;    //grabs token
+            iterToken = strtok(NULL, token);
+        }
+        dispatch_command(args, i);
 
+    for(int k = 0; k < i; k++) {
+        printf("%d:\t%s\n", k, args[k]);
+    }
+
+    }
+    update_process();
+    free_list(head);
+}

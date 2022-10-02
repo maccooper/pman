@@ -17,7 +17,7 @@ obj:
 	mkdir -p $@
 
 pman: $(OBJ)
-	$(CC) -o pman $^ $(CFLAGS)
+	$(CC) -o pman $^ $(CFLAGS) -lreadline
 
 debug: CFLAGS += -g
 debug: pman
