@@ -315,34 +315,4 @@ int main()
     }
     free_list(head);
   return 0;
-    /*
-    int i, j;
-    char *token = " ";
-    char *prompt = "pman:   >";
-    const int max_args = 100;
-    while (1) {
-        i = 0;
-        char *input = NULL;
-        char *iterToken;
-        char *args[max_args];
-        input = readline(prompt);
-        if (!strcmp(input, "")) 
-            continue;
-        iterToken = strtok(input, token);
-        for(j = 0; j < max_args; j++) {
-            if(iterToken)
-                i++;                //Tracks number of arguments
-            args[j] = iterToken;    //grabs token
-            iterToken = strtok(NULL, token);
-        }
-        dispatch_command(args, i);
-
-    for(int k = 0; k < i; k++) {
-        printf("%d:\t%s\n", k, args[k]);
-    }
-
-    }
-    update_process();
-    free_list(head);
-    */
-}
+} 
