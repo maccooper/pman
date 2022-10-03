@@ -5,8 +5,6 @@
 
 #include "csc360_list.h"
 
-Node *head = NULL;
-
 Node *new_node(int pid, char* process_name, int run_state) {
 	Node *temp = (struct Node*)malloc(sizeof(struct Node));
 	temp->pid = pid;
@@ -35,7 +33,7 @@ Node *add_end(Node *list, Node *new) {
 	return list;
 }
 
-void remove_node(int pid) {
+void remove_node(Node *head, int pid) {
 
 	if(head ==  NULL) return;//no list
 	Node *prev = NULL;
@@ -59,7 +57,7 @@ void remove_node(int pid) {
 	}
 }
 
-Node *find_node(int pid) {
+Node *find_node(Node *head, int pid) {
 	Node *curr = head;
 	while(curr == NULL || curr->pid != pid) {
 		if(curr == NULL) {

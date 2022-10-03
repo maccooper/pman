@@ -31,25 +31,27 @@
 #define CWD_BUFFER_MAX_SIZE 80
 #define PROMPT_SIZE 300
 
+Node *start= NULL;
+
 void update_process()
 {
 	int status;
 	int pid = waitpid(-1, &status, WNOHANG|WUNTRACED|WCONTINUED);
 	if(pid > 0) {
 		if(WIFCONTINUED(status)) {
-			Node *n = find_node(pid);
+			Node *n = find_node(start, pid);
 			if(n) {
 				n->run_state = 1;
 			} else  if (WIFSTOPPED(status)) {
-				Node *n = find_node(pid);
+				Node *n = find_node(start, pid);
 				if(n) {
 					n->run_state = 0;
 				}
 			} else if (WIFEXITED(status)) {
-				remove_node(pid);
+				remove_node(start, pid);
 				printf("%d Finished\n", pid);
 			} else if (WIFSIGNALED(status)) {
-				remove_node(pid);
+				remove_node(start, pid);
 				printf("%d Terminated\n", pid);
 			}
 
@@ -93,7 +95,7 @@ void bg_entry(char **argv, int arglength)
 		if (errno != ENOENT) {
 			usleep(1000);
 			Node *n = new_node(pid, argv[1], 1);
-			head = add_front(head, n);
+			start = add_front(start, n);
 		}
 	} else {
 		//error with fork (pid < 0)
@@ -107,7 +109,7 @@ void bg_entry(char **argv, int arglength)
 void bg_list()
 {
     //writes information from linked list to console (pid, process_name)
-	Node *curr = head;
+	Node *curr = start;
 	int process_counter = 0;
 	while (curr != NULL) {
 		process_counter++;
@@ -137,7 +139,7 @@ void bg_kill(int pid)
         printf("Process not found");
 		return;
     }
-	Node *target = find_node(pid);
+	Node *target = find_node(start, pid);
 	if (target && target->run_state == 0) {
 		bg_start(pid);
 	}
@@ -145,6 +147,8 @@ void bg_kill(int pid)
 	if (kill(pid, SIGTERM)) {
 		printf("error: failed to killed process %d\n", pid);
 	}
+	//printf("Successfully killed process with pid%d\n", pid);
+
 }
 
 
@@ -199,7 +203,7 @@ void change_dir(char **args)
 
 }
 
-char **string_token(char *s)
+char **string_tokenize(char *s)
 { 
     //Input:    a string with spaces
     //Output: 2d array with substrings from s
@@ -222,8 +226,8 @@ void pstat_write(char **args_stat, int vol, int nonvol)
     printf("comm:\t%s\n", args_stat[1]);
     printf("state:\t%s\n", args_stat[2]);
     printf("utime:\t%s\n", args_stat[13]);
-    printf("stime:\t%s\n", args_stat[23]);
-    //printf("rss:\t%s\n", 
+    printf("stime:\t%s\n", args_stat[14]);
+	printf("rss:\t%s\n", args_stat[23]);
     printf("voluntary_ctxt_switches:\t%d\n", vol);
     printf("nonvoluntary_ctxt_switches:\t%d\n", nonvol);
 }
@@ -237,6 +241,62 @@ int isdigit_string(char input[]) {
     }
     return 1;
 }
+
+void p_stat(int pid)
+{
+	//Input:        target process pid
+	//Output:       array containing comm,state,utime,stime,rss,voluntary_ctxt_switches, nonvoluntary_ctxt_switches from the /proc/<pid>/stat & /proc/<pid>/status
+
+	if (!process_exists(pid))
+		return;
+	FILE *statfp;
+	FILE *statusfp;
+	char stat_buffer[BUFFER_SIZE];
+	char status_buffer[BUFFER_SIZE];
+	char temp_variable[BUFFER_SIZE];
+	char temp_statusvar[BUFFER_SIZE];
+	char **stat_args;
+	char *check;
+	char *sub_token;
+
+	int vol;
+	int nonvol;
+
+	sprintf(stat_buffer, "/proc/%d/stat", pid);
+	statfp = fopen(stat_buffer, "r");
+	if (fgets(temp_variable, BUFFER_SIZE, statfp) != NULL) {
+		stat_args = string_tokenize(temp_variable);
+	}
+
+	sprintf(status_buffer, "/proc/%d/status", pid);
+	statusfp = fopen(status_buffer, "r");
+
+	while (fgets(temp_statusvar, BUFFER_SIZE, statusfp)) {
+		check = strtok(temp_statusvar, "\n");
+		if (!check) {
+			check = " ";
+		}
+		sub_token = strtok(temp_statusvar, "\t");
+		while (sub_token) {
+			if (!strcmp(sub_token, "nonvoluntary_ctxt_switches:")) {
+				sub_token = strtok(NULL, "\t");
+				nonvol = atoi(sub_token);
+			}
+			if (!strcmp(sub_token, "voluntary_ctxt_switches:")) {
+				sub_token = strtok(NULL, "\t");
+				vol = atoi(sub_token);
+			} else {
+				sub_token = strtok(NULL, "\t");
+			}
+		}
+	}
+
+	pstat_write(stat_args, vol, nonvol);
+	free(stat_args);
+	fclose(statfp);
+	fclose(statusfp);
+}
+
 int verify_input(char input[]) {
     if(!input) {
         printf("job not specified\n");
@@ -251,6 +311,37 @@ int verify_input(char input[]) {
 
 void dispatch_command(char **args, int length)
 {
+	//manages funoction calls based on console command
+	if (length < 3) {
+		if (!(strcasecmp(args[0], "bglist"))) {
+			//cmd_bglist
+			bg_list();
+			//printf("bg_list command");
+		} else {
+			//Invalid Input
+			printf("%s:\tCommand not found\n", args[0]);
+		}
+	} else {
+		if (!(strcasecmp(args[0], "bg"))) {
+			//cmd_bg
+			bg_entry(args, length);
+			printf("BG COMMAND RECOGNIZED");
+		} else if (!(strcasecmp(args[0], "bgstop"))) {
+			//cmd_bgstop
+			bg_stop(atoi(args[1]));
+			//printf("bgstop command\n");
+		} else if (!(strcasecmp(args[0], "bgstart"))) {
+			//cmd_bgstart
+			bg_start(atoi(args[1]));
+		} else if (!(strcasecmp(args[0], "bgkill"))) {
+			//cmd_bgkill
+			bg_kill(atoi(args[1]));
+		} else if (!(strcasecmp(args[0], "pstat"))) {
+			//cmd_pstat
+			p_stat(atoi(args[1]));
+		}
+	}
+/*
 	//manages function calls based on console command
 	if (!(strcasecmp(args[0], "bglist"))) {
 		bg_list();
@@ -276,16 +367,20 @@ void dispatch_command(char **args, int length)
 		exit(0);
 	} else if (!(strcasecmp(args[0], "bgstop"))) {
 		bg_stop(atoi(args[1]));
-        //printf("bgstop command\n");
+        printf("bgstop command\n");
 	} else if (!(strcasecmp(args[0], "bgstart"))) {
 		bg_start(atoi(args[1]));
-        //printf("bgstart command\n");
+        printf("bgstart command\n");
 	} else if (!(strcasecmp(args[0], "bgkill"))) {
 		bg_kill(atoi(args[1]));
-        //printf("bgkill command\n");
+        printf("bgkill command\n");
+	}  else if (!(strcasecmp(args[0], "pstat"))) {
+			//cmd_pstat
+			p_stat(atoi(args[1]));
 	} else {
 		printf("Command not recognized\n");
 	}
+	*/
 }
 
 
@@ -302,6 +397,7 @@ int main()
         continue;
       }
       char *args[max_args];
+	  update_process();
       int index = 0; //Tracks the number of arguments in an input cmd
       args[index] = input;
       index++;
@@ -310,9 +406,14 @@ int main()
         args[index]=input;
         index++;
       }
+	  /*
+	  for(int k = 0; k < index; k++) 
+		  printf("arg #%d:\t%s\n",k,args[k]);
+		  */
       dispatch_command(args, index);
       printf("\n");
     }
-    free_list(head);
+	update_process();
+    free_list(start);
   return 0;
 } 
