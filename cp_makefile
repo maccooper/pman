@@ -1,9 +1,0 @@
-.phony all:
-all: pman
-
-pman: pman.c linked_list.c
-	gcc -Wall pman.c linked_list.c -o pman
-
-.PHONY clean:
-clean:
-	-rm -rf *.o *.exe
