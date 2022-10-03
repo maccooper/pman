@@ -33,6 +33,27 @@
 
 Node *start= NULL;
 
+void check_zombie() {
+    //removes terminated process from linked list, including zombies
+    int status;
+    int ret_val = 0;
+    while(1) {
+        usleep(1000);
+        if (start == NULL) {
+            return;
+        }
+        ret_val = waitpid(-1,&status,WNOHANG);
+        if (ret_val > 0) {
+            //remove the background process from linked list
+            remove_node(start, ret_val);
+        } else if (ret_val == 0) {
+            break;
+        } else {
+            perror("waitpid failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 void update_process()
 {
 	int status;
@@ -82,6 +103,7 @@ void bg_entry(char **argv, int arglength)
 	//runs a process in the background while parent continues to read input. Adds pid to linkedlist datastructure
 	pid_t pid;
 	pid = fork();
+    check_zombie();
 	if (pid == 0) {
 		//in child process
 		if (execvp(argv[1], &argv[1]) < 0) {
@@ -94,6 +116,7 @@ void bg_entry(char **argv, int arglength)
 		//store into our LL
 		if (errno != ENOENT) {
 			usleep(1000);
+            printf("Adding node to list with\nPID: %d\nProcess Name:%s\n", pid,argv[1]);
 			Node *n = new_node(pid, argv[1], 1);
 			start = add_front(start, n);
 		}
@@ -105,7 +128,7 @@ void bg_entry(char **argv, int arglength)
     update_process();
 }
 
-
+/*
 void bg_list()
 {
     //writes information from linked list to console (pid, process_name)
@@ -119,6 +142,7 @@ void bg_list()
 	printf("Total background jobs:\t%i\n", process_counter);
 
 }
+*/
 
 void bg_start(int pid)
 {
@@ -311,43 +335,17 @@ int verify_input(char input[]) {
 
 void dispatch_command(char **args, int length)
 {
-	//manages funoction calls based on console command
-	if (length < 3) {
-		if (!(strcasecmp(args[0], "bglist"))) {
-			//cmd_bglist
-			//bg_list();
-			//printf("bg_list command");
-			print_list(start);
-		} else {
-			//Invalid Input
-			printf("%s:\tCommand not found\n", args[0]);
-		}
-	} else {
-		if (!(strcasecmp(args[0], "bg"))) {
-			//cmd_bg
-			bg_entry(args, length);
-		} else if (!(strcasecmp(args[0], "bgstop"))) {
-			//cmd_bgstop
-			bg_stop(atoi(args[1]));
-			//printf("bgstop command\n");
-		} else if (!(strcasecmp(args[0], "bgstart"))) {
-			//cmd_bgstart
-			bg_start(atoi(args[1]));
-		} else if (!(strcasecmp(args[0], "bgkill"))) {
-			//cmd_bgkill
-			bg_kill(atoi(args[1]));
-		} else if (!(strcasecmp(args[0], "pstat"))) {
-			//cmd_pstat
-			p_stat(atoi(args[1]));
-		}
-	}
-/*
 	//manages function calls based on console command
 	if (!(strcasecmp(args[0], "bglist"))) {
-		bg_list();
+		//bg_list();
+        print_list(start);
 	}
 	else if (!(strcasecmp(args[0], "bg"))) {
-        bg_entry(args, length);
+        if(length < 3) {
+            printf("Please specify a process to run in the background");
+        } else {
+            bg_entry(args, length);
+        }
 	}
 	else if (!(strcasecmp(args[0], "ls"))) {
 		ls_command(args, length);
@@ -366,21 +364,21 @@ void dispatch_command(char **args, int length)
 		printf("Exiting the program\n");
 		exit(0);
 	} else if (!(strcasecmp(args[0], "bgstop"))) {
+        //BGSTOP cmd
 		bg_stop(atoi(args[1]));
-        printf("bgstop command\n");
 	} else if (!(strcasecmp(args[0], "bgstart"))) {
+        //BGSTOP cmd
 		bg_start(atoi(args[1]));
-        printf("bgstart command\n");
 	} else if (!(strcasecmp(args[0], "bgkill"))) {
+        //BGKILL cmd
 		bg_kill(atoi(args[1]));
-        printf("bgkill command\n");
 	}  else if (!(strcasecmp(args[0], "pstat"))) {
 			//cmd_pstat
 			p_stat(atoi(args[1]));
 	} else {
 		printf("Command not recognized\n");
 	}
-	*/
+	
 }
 
 
@@ -406,10 +404,10 @@ int main()
         args[index]=input;
         index++;
       }
-	 /* 
+      /*
 	  for(int k = 0; k < index; k++) 
 		  printf("arg #%d:\t%s\n",k,args[k]);
-	*/	  
+          */
       dispatch_command(args, index);
       printf("\n");
     }
