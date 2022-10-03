@@ -315,8 +315,9 @@ void dispatch_command(char **args, int length)
 	if (length < 3) {
 		if (!(strcasecmp(args[0], "bglist"))) {
 			//cmd_bglist
-			bg_list();
+			//bg_list();
 			//printf("bg_list command");
+			print_list(start);
 		} else {
 			//Invalid Input
 			printf("%s:\tCommand not found\n", args[0]);
@@ -325,7 +326,6 @@ void dispatch_command(char **args, int length)
 		if (!(strcasecmp(args[0], "bg"))) {
 			//cmd_bg
 			bg_entry(args, length);
-			printf("BG COMMAND RECOGNIZED");
 		} else if (!(strcasecmp(args[0], "bgstop"))) {
 			//cmd_bgstop
 			bg_stop(atoi(args[1]));
@@ -406,10 +406,10 @@ int main()
         args[index]=input;
         index++;
       }
-	  /*
+	 /* 
 	  for(int k = 0; k < index; k++) 
 		  printf("arg #%d:\t%s\n",k,args[k]);
-		  */
+	*/	  
       dispatch_command(args, index);
       printf("\n");
     }

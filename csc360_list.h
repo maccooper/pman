@@ -25,6 +25,7 @@ Node *add_front(Node *list, Node *new);
 Node *add_end(Node *list, Node *new);
 void remove_node(Node *head, int pid);
 Node *find_node(Node *head, int pid);
+void print_list(Node *head);
 void free_list(Node *head);
 
 #endif

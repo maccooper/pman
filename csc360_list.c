@@ -68,6 +68,16 @@ Node *find_node(Node *head, int pid) {
 	return curr;
 }
 
+void print_list(Node *head) {
+	Node* curr = head;
+	int process_counter = 0;
+	while(curr != NULL) {
+		printf("%i:\t%s\n", curr->pid, curr->process_name);
+		curr = curr->next;
+	}
+	printf("Total background jobs:\t%i\n", process_counter);
+}
+
 void free_list(Node *head) {
 
 	//Input: any allocated List
