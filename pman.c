@@ -116,7 +116,7 @@ void bg_entry(char **argv, int arglength)
 		//store into our LL
 		if (errno != ENOENT) {
 			usleep(1000);
-            printf("Adding node to list with\nPID: %d\nProcess Name:%s\n", pid,argv[1]);
+            //printf("Adding node to list with\nPID: %d\nProcess Name:%s\n", pid,argv[1]);
 			Node *n = new_node(pid, argv[1], 1);
 			start = add_front(start, n);
 		}
@@ -125,7 +125,6 @@ void bg_entry(char **argv, int arglength)
 		perror("fork failed");
 		exit(EXIT_FAILURE);
 	}
-    update_process();
 }
 
 /*
