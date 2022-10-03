@@ -9,7 +9,8 @@ Node *new_node(int pid, char* process_name, int run_state) {
 	Node *temp = (struct Node*)malloc(sizeof(struct Node));
 	temp->pid = pid;
 	temp->run_state = run_state;
-	temp->process_name = process_name;
+	temp->process_name = malloc(100 * sizeof(char));
+    strncpy(temp->process_name, process_name, 100);
 	temp->next = NULL;
 	return temp;
 }

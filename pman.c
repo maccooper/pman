@@ -33,27 +33,7 @@
 
 Node *start= NULL;
 
-void check_zombie() {
-    //removes terminated process from linked list, including zombies
-    int status;
-    int ret_val = 0;
-    while(1) {
-        usleep(1000);
-        if (start == NULL) {
-            return;
-        }
-        ret_val = waitpid(-1,&status,WNOHANG);
-        if (ret_val > 0) {
-            //remove the background process from linked list
-            remove_node(start, ret_val);
-        } else if (ret_val == 0) {
-            break;
-        } else {
-            perror("waitpid failed");
-            exit(EXIT_FAILURE);
-        }
-    }
-}
+
 void update_process()
 {
 	int status;
@@ -103,19 +83,19 @@ void bg_entry(char **argv, int arglength)
 	//runs a process in the background while parent continues to read input. Adds pid to linkedlist datastructure
 	pid_t pid;
 	pid = fork();
-    check_zombie();
+    update_process();
 	if (pid == 0) {
 		//in child process
+        printf("%d\n",execvp(argv[1],&argv[1]));
 		if (execvp(argv[1], &argv[1]) < 0) {
 			perror("Error on execvp");
-			exit(-1);
+			//exit(-1);
             return;
 		}
 	} else if (pid > 0) {
 		//parent Process
 		//store into our LL
 		if (errno != ENOENT) {
-			usleep(1000);
             //printf("Adding node to list with\nPID: %d\nProcess Name:%s\n", pid,argv[1]);
 			Node *n = new_node(pid, argv[1], 1);
 			start = add_front(start, n);
@@ -170,6 +150,7 @@ void bg_kill(int pid)
 	if (kill(pid, SIGTERM)) {
 		printf("error: failed to killed process %d\n", pid);
 	}
+    remove_node(start, pid);
 	//printf("Successfully killed process with pid%d\n", pid);
 
 }
