@@ -33,9 +33,9 @@
 
 Node *start= NULL;
 
-
 void update_process()
 {
+    //Updates process' stored in our linked list, checks their running state and trims zombie process'
 	int status;
 	int pid = waitpid(-1, &status, WNOHANG|WUNTRACED|WCONTINUED);
 	if(pid > 0) {
@@ -62,6 +62,7 @@ void update_process()
 
 int process_exists(int pid)
 {
+    //Helper function for start, stop, kill functions. Used to validate a process before using system call
 	char dir_buffer[BUFFER_SIZE];
 	sprintf(dir_buffer, "/proc/%d", pid);
 	DIR *dir = opendir(dir_buffer);
@@ -86,7 +87,6 @@ void bg_entry(char **argv, int arglength)
     update_process();
     if (pid == 0) {
 	//in child process
-        //printf("%d\n",execvp(argv[1],&argv[1]));
 	    if (execvp(argv[1], &argv[1]) < 0) {
 			perror("Error on execvp");
 			exit(-1);
@@ -105,22 +105,6 @@ void bg_entry(char **argv, int arglength)
 		exit(EXIT_FAILURE);
 	}
 }
-
-/*
-void bg_list()
-{
-    //writes information from linked list to console (pid, process_name)
-	Node *curr = start;
-	int process_counter = 0;
-	while (curr != NULL) {
-		process_counter++;
-		printf("%i:\t%s\n", curr->pid, curr->process_name);
-		curr = curr->next;
-	}
-	printf("Total background jobs:\t%i\n", process_counter);
-
-}
-*/
 
 void bg_start(int pid)
 {
@@ -167,7 +151,8 @@ void bg_stop(int pid)
 
 
 void ls_command(char **argv, int arglength)
-{ //Uses execvp to fetch the cwd and print it to the user
+{
+    //Uses execvp to fetch the cwd and print it to the user
     char *argument_list[arglength + 1];
 	int i;
 	for(i = 0; i < arglength; ++i) {
@@ -193,6 +178,7 @@ void ls_command(char **argv, int arglength)
 
 void change_dir(char **args)
 {
+    //cd function
 	if (args[1] == NULL || strcmp(args[1],"~") == 0) {
 		chdir(getenv("HOME"));
 	} else if (strcmp(args[1], "..") == 0){
@@ -232,16 +218,6 @@ void pstat_write(char **args_stat, int vol, int nonvol)
 	printf("rss:\t%s\n", args_stat[23]);
     printf("voluntary_ctxt_switches:\t%d\n", vol);
     printf("nonvoluntary_ctxt_switches:\t%d\n", nonvol);
-}
-
-int isdigit_string(char input[]) {
-    int length = strlen(input);
-    for(int i = 0; i < length; i++) {
-        if(!isdigit(input[i])) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 void p_stat(int pid)
@@ -297,18 +273,6 @@ void p_stat(int pid)
 	free(stat_args);
 	fclose(statfp);
 	fclose(statusfp);
-}
-
-int verify_input(char input[]) {
-    if(!input) {
-        printf("job not specified\n");
-        return -1;
-    } else if (!isdigit_string(input)) {
-        printf("please specify an integer for pid\n");
-        return 0;
-    } else {
-        return 1;
-    }
 }
 
 void dispatch_command(char **args, int length)
@@ -382,10 +346,6 @@ int main()
         args[index]=input;
         index++;
       }
-      /*
-	  for(int k = 0; k < index; k++) 
-		  printf("arg #%d:\t%s\n",k,args[k]);
-          */
       dispatch_command(args, index);
       printf("\n");
     }
