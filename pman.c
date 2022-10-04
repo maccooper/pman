@@ -1,4 +1,4 @@
-/*
+/*o*
  *	pman.c
  *
  *	CSC360 Assignment #1
@@ -84,19 +84,18 @@ void bg_entry(char **argv, int arglength)
 	pid_t pid;
 	pid = fork();
     update_process();
-	if (pid == 0) {
-		//in child process
-        printf("%d\n",execvp(argv[1],&argv[1]));
-		if (execvp(argv[1], &argv[1]) < 0) {
+    if (pid == 0) {
+	//in child process
+        //printf("%d\n",execvp(argv[1],&argv[1]));
+	    if (execvp(argv[1], &argv[1]) < 0) {
 			perror("Error on execvp");
-			//exit(-1);
-            return;
-		}
+			exit(-1);
+            //return;
+	    }
 	} else if (pid > 0) {
 		//parent Process
 		//store into our LL
 		if (errno != ENOENT) {
-            //printf("Adding node to list with\nPID: %d\nProcess Name:%s\n", pid,argv[1]);
 			Node *n = new_node(pid, argv[1], 1);
 			start = add_front(start, n);
 		}
@@ -151,8 +150,7 @@ void bg_kill(int pid)
 		printf("error: failed to killed process %d\n", pid);
 	}
     remove_node(start, pid);
-	//printf("Successfully killed process with pid%d\n", pid);
-
+        
 }
 
 

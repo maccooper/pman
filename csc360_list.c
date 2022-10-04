@@ -37,9 +37,9 @@ Node *add_end(Node *list, Node *new) {
 void remove_node(Node *head, int pid) {
 
 	if(head ==  NULL) return;//no list
-	Node *prev = NULL;
+	
+    Node *prev = NULL;
 	Node *curr = head;
-
 	while(curr == NULL || curr->pid != pid) {
 		if(curr == NULL) {	
 			return;
@@ -47,7 +47,8 @@ void remove_node(Node *head, int pid) {
 		}
 		prev = curr;
 		curr = curr->next;
-	}
+    }
+
 	if(curr == head) {
 	//target is head
 		head = curr->next;
@@ -56,6 +57,8 @@ void remove_node(Node *head, int pid) {
 	//target not head
 		prev->next = curr->next;
 	}
+    free(prev);
+    free(curr);
 }
 
 Node *find_node(Node *head, int pid) {
@@ -72,7 +75,7 @@ Node *find_node(Node *head, int pid) {
 void print_list(Node *head) {
     Node *curr = head; 
     int process_counter = 0;
-    while (curr != NULL) {
+    while (curr != NULL && curr->pid != 0) {
         process_counter++;
         printf("%i\t%s\n", curr->pid, curr->process_name);
         curr = curr->next;
